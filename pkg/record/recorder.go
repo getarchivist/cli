@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/creack/pty"
+	"github.com/sirupsen/logrus"
 )
 
 type Command struct {
@@ -49,10 +50,10 @@ func (s *StdinInterceptor) Read(p []byte) (int, error) {
 				if trimmed != "" {
 					select {
 					case <-s.closed:
-						fmt.Fprintln(os.Stderr, "[archivist][debug] StdinInterceptor closed")
+						logrus.Debug("StdinInterceptor closed")
 						return n, io.EOF
 					case s.cmdCh <- trimmed:
-						fmt.Fprintf(os.Stderr, "[archivist][debug] Command intercepted: %q\n", trimmed)
+						logrus.Debugf("Command intercepted: %q", trimmed)
 					}
 					s.session.mu.Lock()
 					s.session.Commands = append(s.session.Commands, Command{
@@ -104,24 +105,24 @@ func StartSession() *Session {
 		fmt.Fprintln(os.Stderr, "[archivist] Warning: Running inside a terminal multiplexer (zellij, tmux, or screen). Command tracking may not work correctly.")
 	}
 
-	fmt.Fprintf(os.Stderr, "[archivist][debug] Shell command: %s\n", shell)
+	logrus.Debugf("Shell command: %s", shell)
 
 	session := &Session{}
 	cmd := exec.Command(shell)
 
-	fmt.Fprintf(os.Stderr, "[archivist][debug] Starting shell process...\n")
+	logrus.Debug("Starting shell process...")
 	ptmx, err := pty.Start(cmd)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to start shell: %v\n", err)
 		return session
 	}
-	fmt.Fprintf(os.Stderr, "[archivist][debug] Shell started. PTY fd: %d\n", ptmx.Fd())
+	logrus.Debugf("Shell started. PTY fd: %d", ptmx.Fd())
 	defer func() {
-		fmt.Fprintf(os.Stderr, "[archivist][debug] Closing PTY...\n")
+		logrus.Debug("Closing PTY...")
 		_ = ptmx.Close()
 	}()
 
-	fmt.Fprintf(os.Stderr, "[archivist][debug] Shell PID: %d\n", cmd.Process.Pid)
+	logrus.Debugf("Shell PID: %d", cmd.Process.Pid)
 	fmt.Printf("[archivist] Recording shell session: %s\n", shell)
 
 	cmdCh := make(chan string, 1)
@@ -140,10 +141,10 @@ func StartSession() *Session {
 
 	// Output logger goroutine
 	go func() {
-		fmt.Fprintln(os.Stderr, "[archivist][debug] Output logger goroutine started")
+		logrus.Debug("Output logger goroutine started")
 		defer func() {
 			wg.Done()
-			fmt.Fprintln(os.Stderr, "[archivist][debug] Output logger goroutine exiting")
+			logrus.Debug("Output logger goroutine exiting")
 		}()
 		var outputBuf bytes.Buffer
 		currentCmdIdx := -1
@@ -151,7 +152,7 @@ func StartSession() *Session {
 		for {
 			select {
 			case <-done:
-				fmt.Fprintln(os.Stderr, "[archivist][debug] Output logger received done signal")
+				logrus.Debug("Output logger received done signal")
 				if currentCmdIdx >= 0 {
 					session.mu.Lock()
 					session.Commands[currentCmdIdx].Output = outputBuf.String()
@@ -162,7 +163,7 @@ func StartSession() *Session {
 				lastCmdIdxMu.Unlock()
 				return
 			case <-cmdCh:
-				fmt.Fprintln(os.Stderr, "[archivist][debug] Output logger: new command detected")
+				logrus.Debug("Output logger: new command detected")
 				if currentCmdIdx >= 0 {
 					session.mu.Lock()
 					session.Commands[currentCmdIdx].Output = outputBuf.String()
@@ -177,9 +178,9 @@ func StartSession() *Session {
 				b, err := ptyReader.ReadByte()
 				if err != nil {
 					if err == io.EOF {
-						fmt.Fprintln(os.Stderr, "[archivist][debug] Output logger: ptyReader EOF")
+						logrus.Debug("Output logger: ptyReader EOF")
 					}
-					fmt.Fprintf(os.Stderr, "[archivist][debug] Output logger: ptyReader error: %v\n", err)
+					logrus.Debugf("Output logger: ptyReader error: %v", err)
 					if currentCmdIdx >= 0 {
 						session.mu.Lock()
 						session.Commands[currentCmdIdx].Output = outputBuf.String()
@@ -188,7 +189,7 @@ func StartSession() *Session {
 					lastCmdIdxMu.Lock()
 					lastCmdIdx = currentCmdIdx
 					lastCmdIdxMu.Unlock()
-					fmt.Fprintln(os.Stderr, "[archivist][debug] Output logger: returning")
+					logrus.Debug("Output logger: returning")
 					return
 				}
 				if currentCmdIdx >= 0 {
@@ -201,21 +202,21 @@ func StartSession() *Session {
 
 	// Input proxy goroutine
 	go func() {
-		fmt.Fprintln(os.Stderr, "[archivist][debug] Input proxy goroutine started")
+		logrus.Debug("Input proxy goroutine started")
 		defer func() {
-			fmt.Fprintln(os.Stderr, "[archivist][debug] Input proxy goroutine exiting")
+			logrus.Debug("Input proxy goroutine exiting")
 			wg.Done()
 		}()
 		_, _ = io.Copy(ptmx, ctxReader)
 		close(cmdCh) // signal no more commands
 	}()
 
-	fmt.Fprintf(os.Stderr, "[archivist][debug] Waiting for shell process to exit...\n")
+	logrus.Debug("Waiting for shell process to exit...")
 	err = cmd.Wait()
-	fmt.Fprintf(os.Stderr, "[archivist][debug] Shell process exited with err: %v\n", err)
+	logrus.Debugf("Shell process exited with err: %v", err)
 	close(done)
 	cancel() // cancel context to unblock input proxy
-	fmt.Fprintln(os.Stderr, "[archivist][debug] Waiting for goroutines to finish...")
+	logrus.Debug("Waiting for goroutines to finish...")
 	wg.Wait()
 
 	// After all goroutines finish, ensure last output is flushed

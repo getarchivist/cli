@@ -11,16 +11,26 @@ import (
 	"github.com/getarchivist/archivist/cli/pkg/output"
 	"github.com/getarchivist/archivist/cli/pkg/record"
 	"github.com/manifoldco/promptui"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
 var notionFlag bool
 var googleFlag bool
 var versionFlag bool
+var debug bool
 
 var RootCmd = &cobra.Command{
 	Use:   "archivist",
 	Short: "Archivist records your shell session for documentation",
+	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		if debug || os.Getenv("ARCHIVIST_DEBUG") == "1" || os.Getenv("ARCHIVIST_DEBUG") == "true" {
+			logrus.SetLevel(logrus.DebugLevel)
+		} else {
+			logrus.SetLevel(logrus.InfoLevel)
+		}
+		logrus.Debug("Debug mode enabled")
+	},
 	Run: func(cmd *cobra.Command, args []string) {
 		if versionFlag {
 			fmt.Printf("Archivist CLI\n=============\nversion: %s\ncommit: %s\nbuild date: %s\n", build.Version, build.Commit, build.Date)
@@ -103,6 +113,7 @@ func init() {
 	RootCmd.PersistentFlags().BoolVar(&notionFlag, "notion", false, "Push doc to Notion after upload")
 	RootCmd.PersistentFlags().BoolVar(&googleFlag, "google", false, "Push doc to Google Docs after upload")
 	RootCmd.PersistentFlags().BoolVar(&versionFlag, "version", false, "Print version and exit")
+	RootCmd.PersistentFlags().BoolVar(&debug, "debug", false, "Enable debug logging")
 }
 
 // Helper for case-insensitive substring search

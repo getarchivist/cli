@@ -9,11 +9,9 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+
+	"github.com/getarchivist/archivist/cli/build"
 )
-
-var BackendURL string // can be set at build time
-
-const defaultDevURL = "http://localhost:3000"
 
 type GenerateDocResponse struct {
 	Doc    string `json:"doc"`
@@ -31,20 +29,17 @@ type NotionTreeNode struct {
 	Children []NotionTreeNode `json:"children,omitempty"`
 }
 
-func resolveBackendURL() string {
-	if BackendURL != "" && BackendURL != "dev" {
-		return BackendURL
-	}
-	if env := os.Getenv("BACKEND_URL"); env != "" {
+func ResolveAPIURL() string {
+	if env := os.Getenv("ARCHIVIST_API_URL"); env != "" {
 		return env
 	}
-	return defaultDevURL
+	return build.DefaultAPIURL
 }
 
 func SendMarkdown(markdown, token string) (*GenerateDocResponse, error) {
 	body := map[string]string{"markdown": markdown}
 	b, _ := json.Marshal(body)
-	url := resolveBackendURL() + "/api/generate-doc"
+	url := ResolveAPIURL() + "/api/generate-doc"
 	req, err := http.NewRequest("POST", url, bytes.NewReader(b))
 	if err != nil {
 		return nil, err
@@ -75,7 +70,7 @@ func SendMarkdownWithDest(markdown, token string, notion, google bool) (*Generat
 		body["google"] = true
 	}
 	b, _ := json.Marshal(body)
-	url := resolveBackendURL() + "/api/generate-doc"
+	url := ResolveAPIURL() + "/api/generate-doc"
 	req, err := http.NewRequest("POST", url, bytes.NewReader(b))
 	if err != nil {
 		return nil, err
@@ -99,7 +94,7 @@ func SendMarkdownWithDest(markdown, token string, notion, google bool) (*Generat
 
 // FetchNotionPageTree fetches the Notion page/database tree for the current user
 func FetchNotionPageTree(token string) ([]NotionTreeNode, error) {
-	url := resolveBackendURL() + "/api/notion/pages"
+	url := ResolveAPIURL() + "/api/notion/pages"
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, err
@@ -130,7 +125,7 @@ func SendMarkdownToNotionWithParent(markdown, token, parentID string) (*Generate
 		"notionParentId": parentID,
 	}
 	b, _ := json.Marshal(body)
-	url := resolveBackendURL() + "/api/generate-doc"
+	url := ResolveAPIURL() + "/api/generate-doc"
 	req, err := http.NewRequest("POST", url, bytes.NewReader(b))
 	if err != nil {
 		return nil, err
