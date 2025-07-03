@@ -13,7 +13,7 @@ before:
     - go mod tidy
 
 builds:
-    main: ./cmd/archivist
+  - main: ./cmd/archivist
     ldflags:
       - -X 'main.version={{ .Version }}'
       - -X 'main.commit={{ .Commit }}'
