@@ -29,6 +29,10 @@ builds:
       - amd64
       - arm64
 
+archives:
+  - format: tar.gz
+    name_template: "archivist-{{ .Os }}-{{ .Arch }}"
+
 checksum:
   name_template: "checksums.txt"
 
