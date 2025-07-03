@@ -39,4 +39,3 @@ release:
   github:
     owner: getarchivist
     name: cli 
-    make_latest: true
