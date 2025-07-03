@@ -16,12 +16,12 @@ builds:
   - main: ./cmd/archivist
     binary: archivist
     ldflags:
-      - -X 'main.version={{ .Version }}'
-      - -X 'main.commit={{ .Commit }}'
-      - -X 'main.date={{ .Date }}'
-      - -X 'commands.defaultClientID={{ .Env.ARCHIVIST_OAUTH_CLIENT_ID }}'
-      - -X 'commands.defaultAuthURL={{ .Env.ARCHIVIST_OAUTH_AUTH_URL }}'
-      - -X 'commands.defaultTokenURL={{ .Env.ARCHIVIST_OAUTH_TOKEN_URL }}'
+      - -X 'cmd/archivist/main.version={{ .Version }}'
+      - -X 'cmd/archivist/main.commit={{ .Commit }}'
+      - -X 'cmd/archivist/main.date={{ .Date }}'
+      - -X 'cmd/archivist/commands.defaultClientID={{ .Env.ARCHIVIST_OAUTH_CLIENT_ID }}'
+      - -X 'cmd/archivist/commands.defaultAuthURL={{ .Env.ARCHIVIST_OAUTH_AUTH_URL }}'
+      - -X 'cmd/archivist/commands.defaultTokenURL={{ .Env.ARCHIVIST_OAUTH_TOKEN_URL }}'
     goos:
       - linux
       - darwin
