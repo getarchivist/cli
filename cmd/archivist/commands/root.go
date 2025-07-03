@@ -15,11 +15,23 @@ import (
 
 var notionFlag bool
 var googleFlag bool
+var versionFlag bool
+
+// Versioning variables set by ldflags
+var (
+	version = "dev"
+	commit  = "none"
+	date    = "unknown"
+)
 
 var RootCmd = &cobra.Command{
 	Use:   "archivist",
 	Short: "Archivist records your shell session for documentation",
 	Run: func(cmd *cobra.Command, args []string) {
+		if versionFlag {
+			fmt.Printf("Archivist CLI\n=============\nversion: %s\ncommit: %s\nbuild date: %s\n", version, commit, date)
+			os.Exit(0)
+		}
 		session := record.StartSession()
 		markdown := output.ToMarkdown(session)
 
@@ -96,6 +108,7 @@ var RootCmd = &cobra.Command{
 func init() {
 	RootCmd.PersistentFlags().BoolVar(&notionFlag, "notion", false, "Push doc to Notion after upload")
 	RootCmd.PersistentFlags().BoolVar(&googleFlag, "google", false, "Push doc to Google Docs after upload")
+	RootCmd.PersistentFlags().BoolVar(&versionFlag, "version", false, "Print version and exit")
 }
 
 // Helper for case-insensitive substring search

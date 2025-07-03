@@ -53,6 +53,8 @@ var loginCmd = &cobra.Command{
 		authzURL := fmt.Sprintf("%s?response_type=code&client_id=%s&redirect_uri=%s&scope=%s&code_challenge=%s&code_challenge_method=S256",
 			conf.AuthURL, conf.ClientID, urlEncode(conf.RedirectURI), urlEncode(strings.Join(conf.Scopes, " ")), challenge)
 		fmt.Println("Opening browser for login...")
+		fmt.Println("If your browser doesn't open, please open the following URL in your browser:")
+		fmt.Println(authzURL)
 		if err := auth.OpenBrowser(authzURL); err != nil {
 			fmt.Printf("Please open the following URL in your browser:\n%s\n", authzURL)
 		}
