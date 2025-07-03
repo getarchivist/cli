@@ -19,9 +19,9 @@ builds:
       - -X 'main.version={{ .Version }}'
       - -X 'main.commit={{ .Commit }}'
       - -X 'main.date={{ .Date }}'
-      - -X 'commands.clientID={{ .Env.ARCHIVIST_OAUTH_CLIENT_ID }}'
-      - -X 'commands.authURL={{ .Env.ARCHIVIST_OAUTH_AUTH_URL }}'
-      - -X 'commands.tokenURL={{ .Env.ARCHIVIST_OAUTH_TOKEN_URL }}'
+      - -X 'commands.defaultClientID={{ .Env.ARCHIVIST_OAUTH_CLIENT_ID }}'
+      - -X 'commands.defaultAuthURL={{ .Env.ARCHIVIST_OAUTH_AUTH_URL }}'
+      - -X 'commands.defaultTokenURL={{ .Env.ARCHIVIST_OAUTH_TOKEN_URL }}'
     goos:
       - linux
       - darwin

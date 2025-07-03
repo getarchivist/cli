@@ -9,15 +9,13 @@ import (
 	"time"
 
 	"github.com/getarchivist/archivist/cli/pkg/auth"
-	"github.com/gookit/goutil/dump"
 	"github.com/spf13/cobra"
 )
 
 var (
-	clientID    = os.Getenv("ARCHIVIST_OAUTH_CLIENT_ID")
-	redirectURI = "http://localhost:53682/callback"
-	authURL     = os.Getenv("ARCHIVIST_OAUTH_AUTH_URL")
-	tokenURL    = os.Getenv("ARCHIVIST_OAUTH_TOKEN_URL")
+	clientID = os.Getenv("ARCHIVIST_OAUTH_CLIENT_ID")
+	authURL  = os.Getenv("ARCHIVIST_OAUTH_AUTH_URL")
+	tokenURL = os.Getenv("ARCHIVIST_OAUTH_TOKEN_URL")
 
 	defaultClientID = ""
 	defaultAuthURL  = ""
@@ -43,7 +41,7 @@ var loginCmd = &cobra.Command{
 			ClientID:    clientID,
 			AuthURL:     authURL,
 			TokenURL:    tokenURL,
-			RedirectURI: redirectURI,
+			RedirectURI: "http://localhost:53682/callback",
 			Scopes:      []string{"email", "profile"},
 		}
 		verifier, challenge, err := auth.GeneratePKCE()
@@ -53,8 +51,6 @@ var loginCmd = &cobra.Command{
 		authzURL := fmt.Sprintf("%s?response_type=code&client_id=%s&redirect_uri=%s&scope=%s&code_challenge=%s&code_challenge_method=S256",
 			conf.AuthURL, conf.ClientID, urlEncode(conf.RedirectURI), urlEncode(strings.Join(conf.Scopes, " ")), challenge)
 		fmt.Println("Opening browser for login...")
-		fmt.Println("If your browser doesn't open, please open the following URL in your browser:")
-		fmt.Println(authzURL)
 		if err := auth.OpenBrowser(authzURL); err != nil {
 			fmt.Printf("Please open the following URL in your browser:\n%s\n", authzURL)
 		}
@@ -63,12 +59,10 @@ var loginCmd = &cobra.Command{
 		if err != nil {
 			return fmt.Errorf("failed to receive code: %w", err)
 		}
-		dump.P(code)
 		token, err := auth.ExchangeCodeForToken(context.Background(), conf, code, verifier)
 		if err != nil {
 			return fmt.Errorf("token exchange failed: %w", err)
 		}
-		dump.P(token)
 		if err := auth.StoreToken(token.AccessToken); err != nil {
 			return fmt.Errorf("failed to store token: %w", err)
 		}

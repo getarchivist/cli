@@ -25,3 +25,6 @@ dist/
 .vscode
 *.swp
 *.swo
+
+# Environment variables
+.envrc
