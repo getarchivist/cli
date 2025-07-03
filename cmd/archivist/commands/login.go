@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/getarchivist/archivist/cli/build"
 	"github.com/getarchivist/archivist/cli/pkg/auth"
 	"github.com/spf13/cobra"
 )
@@ -16,10 +17,6 @@ var (
 	clientID = os.Getenv("ARCHIVIST_OAUTH_CLIENT_ID")
 	authURL  = os.Getenv("ARCHIVIST_OAUTH_AUTH_URL")
 	tokenURL = os.Getenv("ARCHIVIST_OAUTH_TOKEN_URL")
-
-	defaultClientID = ""
-	defaultAuthURL  = ""
-	defaultTokenURL = ""
 )
 
 var loginCmd = &cobra.Command{
@@ -28,13 +25,13 @@ var loginCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 
 		if clientID == "" {
-			clientID = defaultClientID
+			clientID = build.DefaultClientID
 		}
 		if authURL == "" {
-			authURL = defaultAuthURL
+			authURL = build.DefaultAuthURL
 		}
 		if tokenURL == "" {
-			tokenURL = defaultTokenURL
+			tokenURL = build.DefaultTokenURL
 		}
 
 		conf := auth.OAuthConfig{

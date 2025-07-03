@@ -5,6 +5,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/getarchivist/archivist/cli/build"
 	"github.com/getarchivist/archivist/cli/pkg/api"
 	"github.com/getarchivist/archivist/cli/pkg/auth"
 	"github.com/getarchivist/archivist/cli/pkg/output"
@@ -17,19 +18,12 @@ var notionFlag bool
 var googleFlag bool
 var versionFlag bool
 
-// Versioning variables set by ldflags
-var (
-	version = "dev"
-	commit  = "none"
-	date    = "unknown"
-)
-
 var RootCmd = &cobra.Command{
 	Use:   "archivist",
 	Short: "Archivist records your shell session for documentation",
 	Run: func(cmd *cobra.Command, args []string) {
 		if versionFlag {
-			fmt.Printf("Archivist CLI\n=============\nversion: %s\ncommit: %s\nbuild date: %s\n", version, commit, date)
+			fmt.Printf("Archivist CLI\n=============\nversion: %s\ncommit: %s\nbuild date: %s\n", build.Version, build.Commit, build.Date)
 			os.Exit(0)
 		}
 		session := record.StartSession()

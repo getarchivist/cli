@@ -16,12 +16,12 @@ builds:
   - main: ./cmd/archivist
     binary: archivist
     ldflags:
-      - -X 'github.com/getarchivist/cli/cmd/archivist/main.version={{ .Version }}'
-      - -X 'github.com/getarchivist/cli/cmd/archivist/main.commit={{ .Commit }}'
-      - -X 'github.com/getarchivist/cli/cmd/archivist/main.date={{ .Date }}'
-      - -X 'github.com/getarchivist/cli/cmd/archivist/commands.defaultClientID={{ .Env.ARCHIVIST_OAUTH_CLIENT_ID }}'
-      - -X 'github.com/getarchivist/cli/cmd/archivist/commands.defaultAuthURL={{ .Env.ARCHIVIST_OAUTH_AUTH_URL }}'
-      - -X 'github.com/getarchivist/cli/cmd/archivist/commands.defaultTokenURL={{ .Env.ARCHIVIST_OAUTH_TOKEN_URL }}'
+      - -X 'github.com/getarchivist/archivist/cli/build.Version={{ .Version }}'
+      - -X 'github.com/getarchivist/archivist/cli/build.Commit={{ .Commit }}'
+      - -X 'github.com/getarchivist/archivist/cli/build.Date={{ .Date }}'
+      - -X 'github.com/getarchivist/archivist/cli/build.DefaultClientID={{ .Env.ARCHIVIST_OAUTH_CLIENT_ID }}'
+      - -X 'github.com/getarchivist/archivist/cli/build.DefaultAuthURL={{ .Env.ARCHIVIST_OAUTH_AUTH_URL }}'
+      - -X 'github.com/getarchivist/archivist/cli/build.DefaultTokenURL={{ .Env.ARCHIVIST_OAUTH_TOKEN_URL }}'
     goos:
       - linux
       - darwin
