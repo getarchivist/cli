@@ -26,4 +26,5 @@ checksum:
 release:
   github:
     owner: getarchivist
-    name: archivist 
+    name: cli 
+    make_latest: true
