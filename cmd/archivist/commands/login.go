@@ -1,4 +1,4 @@
-package main
+package commands
 
 import (
 	"context"
@@ -65,5 +65,5 @@ func urlEncode(s string) string {
 }
 
 func init() {
-	rootCmd.AddCommand(loginCmd)
+	RootCmd.AddCommand(loginCmd)
 }

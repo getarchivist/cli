@@ -1,4 +1,4 @@
-package main
+package commands
 
 import (
 	"fmt"
@@ -16,7 +16,7 @@ import (
 var notionFlag bool
 var googleFlag bool
 
-var rootCmd = &cobra.Command{
+var RootCmd = &cobra.Command{
 	Use:   "archivist",
 	Short: "Archivist records your shell session for documentation",
 	Run: func(cmd *cobra.Command, args []string) {
@@ -95,8 +95,8 @@ var rootCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.PersistentFlags().BoolVar(&notionFlag, "notion", false, "Push doc to Notion after upload")
-	rootCmd.PersistentFlags().BoolVar(&googleFlag, "google", false, "Push doc to Google Docs after upload")
+	RootCmd.PersistentFlags().BoolVar(&notionFlag, "notion", false, "Push doc to Notion after upload")
+	RootCmd.PersistentFlags().BoolVar(&googleFlag, "google", false, "Push doc to Google Docs after upload")
 }
 
 // Helper for case-insensitive substring search

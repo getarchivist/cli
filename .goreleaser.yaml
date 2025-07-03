@@ -1,0 +1,26 @@
+project_name: archivist
+
+builds:
+  - main: ./cmd/archivist
+    ldflags:
+      - -X 'main.version={{ .Version }}'
+      - -X 'main.commit={{ .Commit }}'
+      - -X 'main.date={{ .Date }}'
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+
+archives:
+  - format: tar.gz
+    name_template: "{{ .ProjectName }}-{{ .Os }}-{{ .Arch }}"
+
+checksum:
+  name_template: "checksums.txt"
+
+release:
+  github:
+    owner: getarchivist
+    name: archivist 
