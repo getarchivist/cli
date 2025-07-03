@@ -13,17 +13,32 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var (
+	clientID    = os.Getenv("ARCHIVIST_OAUTH_CLIENT_ID")
+	redirectURI = "http://localhost:53682/callback"
+	authURL     = os.Getenv("ARCHIVIST_OAUTH_AUTH_URL")
+	tokenURL    = os.Getenv("ARCHIVIST_OAUTH_TOKEN_URL")
+
+	defaultClientID = ""
+	defaultAuthURL  = ""
+	defaultTokenURL = ""
+)
+
 var loginCmd = &cobra.Command{
 	Use:   "login",
-	Short: "Authenticate with Clerk using OAuth (PKCE)",
+	Short: "Authenticate with Archivist API",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		clientID := os.Getenv("CLERK_OAUTH_CLIENT_ID")
-		redirectURI := "http://localhost:53682/callback"
-		authURL := "https://stirred-collie-99.clerk.accounts.dev/oauth/authorize" // Replace with your Clerk domain
-		tokenURL := "https://stirred-collie-99.clerk.accounts.dev/oauth/token"    // Replace with your Clerk domain
+
 		if clientID == "" {
-			return fmt.Errorf("CLERK_OAUTH_CLIENT_ID not set in environment")
+			clientID = defaultClientID
 		}
+		if authURL == "" {
+			authURL = defaultAuthURL
+		}
+		if tokenURL == "" {
+			tokenURL = defaultTokenURL
+		}
+
 		conf := auth.OAuthConfig{
 			ClientID:    clientID,
 			AuthURL:     authURL,

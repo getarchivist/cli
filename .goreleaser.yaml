@@ -6,6 +6,9 @@ builds:
       - -X 'main.version={{ .Version }}'
       - -X 'main.commit={{ .Commit }}'
       - -X 'main.date={{ .Date }}'
+      - -X 'main.clientID={{ .Env.ARCHIVIST_OAUTH_CLIENT_ID }}'
+      - -X 'main.authURL={{ .Env.ARCHIVIST_OAUTH_AUTH_URL }}'
+      - -X 'main.tokenURL={{ .Env.ARCHIVIST_OAUTH_TOKEN_URL }}'
     goos:
       - linux
       - darwin

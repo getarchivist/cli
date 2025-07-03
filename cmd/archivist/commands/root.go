@@ -29,7 +29,6 @@ var RootCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		fmt.Println("token", token)
 		if notionFlag {
 			tree, err := api.FetchNotionPageTree(token)
 			if err != nil {
