@@ -64,6 +64,12 @@ var loginCmd = &cobra.Command{
 			return fmt.Errorf("failed to store token: %w", err)
 		}
 		fmt.Println("Login successful! Token stored securely.")
+		fmt.Println("\nWelcome to Archivist! Here's how to get started:")
+		fmt.Println("1. Create your first recording:")
+		fmt.Println("   $ archivist")
+		fmt.Println("2. Start typing or pasting content")
+		fmt.Println("3. Press Ctrl+D when done to save")
+		fmt.Println("\nYour docs will appear at https://getarchivist.com")
 		return nil
 	},
 }
