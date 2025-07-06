@@ -105,7 +105,7 @@ var RootCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		fmt.Printf("[archivist] Doc uploaded! User: %s, Doc ID: %s\n", resp.UserID, resp.ID)
+		fmt.Printf("[archivist] Doc uploaded! Document URL: %s/%s\n", api.ResolveAPIURL(), resp.ID)
 	},
 }
 
