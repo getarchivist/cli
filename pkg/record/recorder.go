@@ -123,7 +123,8 @@ func StartSession() *Session {
 	}()
 
 	logrus.Debugf("Shell PID: %d", cmd.Process.Pid)
-	fmt.Printf("[archivist] Recording shell session: %s\n", shell)
+	fmt.Printf("🎥 Recording started: %s\n", shell)
+	fmt.Println("Press Ctrl+D when done to save and exit")
 
 	cmdCh := make(chan string, 1)
 	done := make(chan struct{})
@@ -226,7 +227,7 @@ func StartSession() *Session {
 	}
 	lastCmdIdxMu.Unlock()
 
-	fmt.Println("[archivist] Recording ended.")
+	fmt.Println("🛑 Recording ended.")
 
 	return session
 }
