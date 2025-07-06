@@ -28,7 +28,7 @@ jobs:
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
-          ARCHIVIST_OAUTH_CLIENT_ID: ${{ secrets.ARCHIVIST_OAUTH_CLIENT_ID }}
-          ARCHIVIST_OAUTH_AUTH_URL: ${{ secrets.ARCHIVIST_OAUTH_AUTH_URL }}
-          ARCHIVIST_OAUTH_TOKEN_URL: ${{ secrets.ARCHIVIST_OAUTH_TOKEN_URL }}
-          ARCHIVIST_API_URL: ${{ vars.ARCHIVIST_API_URL }}
+          OHSHELL_OAUTH_CLIENT_ID: ${{ secrets.OHSHELL_OAUTH_CLIENT_ID }}
+          OHSHELL_OAUTH_AUTH_URL: ${{ secrets.OHSHELL_OAUTH_AUTH_URL }}
+          OHSHELL_OAUTH_TOKEN_URL: ${{ secrets.OHSHELL_OAUTH_TOKEN_URL }}
+          OHSHELL_API_URL: ${{ vars.OHSHELL_API_URL }}
