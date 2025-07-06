@@ -21,7 +21,7 @@ var (
 
 var loginCmd = &cobra.Command{
 	Use:   "login",
-	Short: "Authenticate with Archivist API",
+	Short: "Authenticate with OhShell API",
 	RunE: func(cmd *cobra.Command, args []string) error {
 
 		if clientID == "" {
