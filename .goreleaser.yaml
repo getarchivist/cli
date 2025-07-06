@@ -14,15 +14,15 @@ before:
 
 builds:
   - main: ./cmd/archivist
-    binary: archivist
+    binary: ohsh
     ldflags:
-      - -X 'github.com/getarchivist/archivist/cli/build.Version={{ .Version }}'
-      - -X 'github.com/getarchivist/archivist/cli/build.Commit={{ .Commit }}'
-      - -X 'github.com/getarchivist/archivist/cli/build.Date={{ .Date }}'
-      - -X 'github.com/getarchivist/archivist/cli/build.DefaultClientID={{ .Env.ARCHIVIST_OAUTH_CLIENT_ID }}'
-      - -X 'github.com/getarchivist/archivist/cli/build.DefaultAuthURL={{ .Env.ARCHIVIST_OAUTH_AUTH_URL }}'
-      - -X 'github.com/getarchivist/archivist/cli/build.DefaultTokenURL={{ .Env.ARCHIVIST_OAUTH_TOKEN_URL }}'
-      - -X 'github.com/getarchivist/archivist/cli/build.DefaultAPIURL={{ .Env.ARCHIVIST_API_URL }}'
+      - -X 'github.com/ohshell/cli/build.Version={{ .Version }}'
+      - -X 'github.com/ohshell/cli/build.Commit={{ .Commit }}'
+      - -X 'github.com/ohshell/cli/build.Date={{ .Date }}'
+      - -X 'github.com/ohshell/cli/build.DefaultClientID={{ .Env.OHSHELL_OAUTH_CLIENT_ID }}'
+      - -X 'github.com/ohshell/cli/build.DefaultAuthURL={{ .Env.OHSHELL_OAUTH_AUTH_URL }}'
+      - -X 'github.com/ohshell/cli/build.DefaultTokenURL={{ .Env.OHSHELL_OAUTH_TOKEN_URL }}'
+      - -X 'github.com/ohshell/cli/build.DefaultAPIURL={{ .Env.OHSHELL_API_URL }}'
     goos:
       - linux
       - darwin
@@ -32,12 +32,12 @@ builds:
 
 archives:
   - format: tar.gz
-    name_template: "archivist-{{ .Os }}-{{ .Arch }}"
+    name_template: "ohsh-{{ .Os }}-{{ .Arch }}"
 
 checksum:
   name_template: "checksums.txt"
 
 release:
   github:
-    owner: getarchivist
+    owner: ohshell
     name: cli 

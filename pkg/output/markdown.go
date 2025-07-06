@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/getarchivist/archivist/cli/pkg/record"
+	"github.com/ohshell/cli/pkg/record"
 )
 
 // ToMarkdown generates a simple Markdown representation of the session.

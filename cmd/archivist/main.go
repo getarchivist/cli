@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/getarchivist/archivist/cli/cmd/archivist/commands"
+	"github.com/ohshell/cli/cmd/archivist/commands"
 )
 
 func main() {

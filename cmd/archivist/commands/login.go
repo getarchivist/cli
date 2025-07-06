@@ -8,15 +8,15 @@ import (
 	"strings"
 	"time"
 
-	"github.com/getarchivist/archivist/cli/build"
-	"github.com/getarchivist/archivist/cli/pkg/auth"
+	"github.com/ohshell/cli/build"
+	"github.com/ohshell/cli/pkg/auth"
 	"github.com/spf13/cobra"
 )
 
 var (
-	clientID = os.Getenv("ARCHIVIST_OAUTH_CLIENT_ID")
-	authURL  = os.Getenv("ARCHIVIST_OAUTH_AUTH_URL")
-	tokenURL = os.Getenv("ARCHIVIST_OAUTH_TOKEN_URL")
+	clientID = os.Getenv("OHSH_OAUTH_CLIENT_ID")
+	authURL  = os.Getenv("OHSH_OAUTH_AUTH_URL")
+	tokenURL = os.Getenv("OHSH_OAUTH_TOKEN_URL")
 )
 
 var loginCmd = &cobra.Command{

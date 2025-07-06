@@ -5,12 +5,12 @@ import (
 	"os"
 	"strings"
 
-	"github.com/getarchivist/archivist/cli/build"
-	"github.com/getarchivist/archivist/cli/pkg/api"
-	"github.com/getarchivist/archivist/cli/pkg/auth"
-	"github.com/getarchivist/archivist/cli/pkg/output"
-	"github.com/getarchivist/archivist/cli/pkg/record"
 	"github.com/manifoldco/promptui"
+	"github.com/ohshell/cli/build"
+	"github.com/ohshell/cli/pkg/api"
+	"github.com/ohshell/cli/pkg/auth"
+	"github.com/ohshell/cli/pkg/output"
+	"github.com/ohshell/cli/pkg/record"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -21,10 +21,10 @@ var versionFlag bool
 var debug bool
 
 var RootCmd = &cobra.Command{
-	Use:   "archivist",
-	Short: "Archivist records your shell session for documentation",
+	Use:   "ohsh",
+	Short: "ohshell records your shell session for documentation",
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
-		if debug || os.Getenv("ARCHIVIST_DEBUG") == "1" || os.Getenv("ARCHIVIST_DEBUG") == "true" {
+		if debug || os.Getenv("OHSHELL_DEBUG") == "1" || os.Getenv("OHSHELL_DEBUG") == "true" {
 			logrus.SetLevel(logrus.DebugLevel)
 		} else {
 			logrus.SetLevel(logrus.InfoLevel)
@@ -33,7 +33,7 @@ var RootCmd = &cobra.Command{
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		if versionFlag {
-			fmt.Printf("Archivist CLI\n=============\nversion: %s\ncommit: %s\nbuild date: %s\n", build.Version, build.Commit, build.Date)
+			fmt.Printf("ohsh CLI\n========\nversion: %s\ncommit: %s\nbuild date: %s\n", build.Version, build.Commit, build.Date)
 			os.Exit(0)
 		}
 		session := record.StartSession()
@@ -41,14 +41,14 @@ var RootCmd = &cobra.Command{
 
 		token, err := auth.GetToken()
 		if err != nil {
-			fmt.Fprintln(os.Stderr, "[archivist] You must login first: archivist login")
+			fmt.Fprintln(os.Stderr, "[ohsh] You must login first: ohsh login")
 			os.Exit(1)
 		}
 
 		if notionFlag {
 			tree, err := api.FetchNotionPageTree(token)
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "[archivist] Failed to fetch Notion pages: %v\n", err)
+				fmt.Fprintf(os.Stderr, "[ohsh] Failed to fetch Notion pages: %v\n", err)
 				os.Exit(1)
 			}
 
@@ -85,7 +85,7 @@ var RootCmd = &cobra.Command{
 			}
 			idx, _, err := prompt.Run()
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "[archivist] Prompt cancelled: %v\n", err)
+				fmt.Fprintf(os.Stderr, "[ohsh] Prompt cancelled: %v\n", err)
 				os.Exit(1)
 			}
 			parentID := flat[idx].ID
@@ -93,19 +93,19 @@ var RootCmd = &cobra.Command{
 			// Send doc to Notion with parentID
 			resp, err := api.SendMarkdownToNotionWithParent(markdown, token, parentID)
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "[archivist] Failed to upload doc to Notion: %v\n", err)
+				fmt.Fprintf(os.Stderr, "[ohsh] Failed to upload doc to Notion: %v\n", err)
 				os.Exit(1)
 			}
-			fmt.Printf("[archivist] Doc uploaded to Notion! User: %s, Doc ID: %s\n", resp.UserID, resp.ID)
+			fmt.Printf("[ohsh] Doc uploaded to Notion! User: %s, Doc ID: %s\n", resp.UserID, resp.ID)
 			return
 		}
 		resp, err := api.SendMarkdownWithDest(markdown, token, notionFlag, googleFlag)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "[archivist] Failed to upload doc: %v\n", err)
+			fmt.Fprintf(os.Stderr, "[ohsh] Failed to upload doc: %v\n", err)
 			os.Exit(1)
 		}
 
-		fmt.Printf("[archivist] Doc uploaded! Document URL: %s/%s\n", api.ResolveAPIURL(), resp.ID)
+		fmt.Printf("[ohsh] Doc uploaded! Document URL: %s/%s\n", api.ResolveAPIURL(), resp.ID)
 	},
 }
 

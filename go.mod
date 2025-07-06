@@ -1,4 +1,4 @@
-module github.com/getarchivist/archivist/cli
+module github.com/ohshell/cli
 
 go 1.24.4
 

@@ -10,7 +10,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/getarchivist/archivist/cli/build"
+	"github.com/ohshell/cli/build"
 )
 
 type GenerateDocResponse struct {
@@ -30,7 +30,7 @@ type NotionTreeNode struct {
 }
 
 func ResolveAPIURL() string {
-	if env := os.Getenv("ARCHIVIST_API_URL"); env != "" {
+	if env := os.Getenv("OHSH_API_URL"); env != "" {
 		return env
 	}
 	return build.DefaultAPIURL
