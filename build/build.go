@@ -8,5 +8,5 @@ var (
 	DefaultClientID = ""
 	DefaultAuthURL  = ""
 	DefaultTokenURL = ""
-	DefaultAPIURL   = "https://archivist.dev"
+	DefaultAPIURL   = "https://www.ohsh.dev"
 )
