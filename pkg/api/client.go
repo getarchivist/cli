@@ -29,6 +29,15 @@ type NotionTreeNode struct {
 	Children []NotionTreeNode `json:"children,omitempty"`
 }
 
+// RunbookNotFoundError is returned when a runbook is not found (404)
+type RunbookNotFoundError struct {
+	ID string
+}
+
+func (e *RunbookNotFoundError) Error() string {
+	return "runbook not found: " + e.ID
+}
+
 func ResolveAPIURL() string {
 	if env := os.Getenv("OHSH_API_URL"); env != "" {
 		return env
@@ -145,4 +154,34 @@ func SendMarkdownToNotionWithParent(markdown, token, parentID string) (*Generate
 		return nil, err
 	}
 	return &out, nil
+}
+
+// FetchRunbookMarkdown fetches a runbook's markdown by ID from /api/runbooks/{id}
+func FetchRunbookMarkdown(id, token string) (string, error) {
+	url := ResolveAPIURL() + "/api/runbooks/" + id
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return "", err
+	}
+	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode == 404 {
+		return "", &RunbookNotFoundError{ID: id}
+	}
+	if resp.StatusCode != 200 {
+		return "", fmt.Errorf("backend error: %s", resp.Status)
+	}
+	var out struct {
+		Markdown string `json:"markdown"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&out); err != nil {
+		return "", err
+	}
+	return out.Markdown, nil
 }

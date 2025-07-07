@@ -13,7 +13,7 @@ before:
     - go mod tidy
 
 builds:
-  - main: ./cmd/archivist
+  - main: ./cmd/ohsh
     binary: ohsh
     ldflags:
       - -X 'github.com/ohshell/cli/build.Version={{ .Version }}'

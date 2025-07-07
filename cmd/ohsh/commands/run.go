@@ -15,6 +15,9 @@ import (
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/ast"
 	"github.com/yuin/goldmark/text"
+
+	"github.com/ohshell/cli/pkg/api"
+	"github.com/ohshell/cli/pkg/auth"
 )
 
 // --- Lipgloss Styles ---
@@ -84,9 +87,19 @@ var runCmd = &cobra.Command{
 	Short: "Run a runbook step by step in a beautiful TUI",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		runbookLink := args[0]
-		markdown, err := fetchRunbookMarkdown(runbookLink)
+		runbookID := args[0]
+		token, err := auth.GetToken()
 		if err != nil {
+			fmt.Fprintln(os.Stderr, "[ohsh] You must login first: ohsh login")
+			os.Exit(1)
+		}
+
+		markdown, err := api.FetchRunbookMarkdown(runbookID, token)
+		if err != nil {
+			if nf, ok := err.(*api.RunbookNotFoundError); ok {
+				fmt.Fprintf(os.Stderr, "[ohsh] Runbook not found: %s\n", nf.ID)
+				os.Exit(1)
+			}
 			fmt.Fprintf(os.Stderr, "[ohsh] Failed to fetch runbook: %v\n", err)
 			os.Exit(1)
 		}
@@ -105,25 +118,6 @@ var runCmd = &cobra.Command{
 
 func init() {
 	RootCmd.AddCommand(runCmd)
-}
-
-// fetchRunbookMarkdown mocks fetching a runbook from a link.
-func fetchRunbookMarkdown(link string) (string, error) {
-	// NOTE: Use ~~~ instead of ``` for code blocks to avoid Go raw string issues.
-	return `### Step 1
-Description of step 1.
-**Command:**
-~~~
-ls -la <path>
-~~~
-
-### Step 2
-Description of step 2.
-**Command:**
-~~~
-echo 'Hello, world!'
-~~~
-`, nil
 }
 
 // parseRunbookSteps parses Markdown into steps.
