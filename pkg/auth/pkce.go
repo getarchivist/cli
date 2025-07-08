@@ -134,12 +134,27 @@ func ExchangeCodeForToken(ctx context.Context, conf OAuthConfig, code, codeVerif
 	return &token, nil
 }
 
-// Store the access token in the OS keyring
-func StoreToken(token string) error {
-	return keyring.Set(KeyringService, KeyringTokenKey, token)
+// TokenStore defines the interface for storing and retrieving tokens
+// This allows for mocking in tests
+type TokenStore interface {
+	Set(service, key, value string) error
+	Get(service, key string) (string, error)
+	Delete(service, key string) error
 }
 
-// Retrieve the access token from the OS keyring
-func GetToken() (string, error) {
-	return keyring.Get(KeyringService, KeyringTokenKey)
+// RealKeyring implements TokenStore using the OS keyring
+type RealKeyring struct{}
+
+func (r RealKeyring) Set(service, key, value string) error    { return keyring.Set(service, key, value) }
+func (r RealKeyring) Get(service, key string) (string, error) { return keyring.Get(service, key) }
+func (r RealKeyring) Delete(service, key string) error        { return keyring.Delete(service, key) }
+
+// StoreToken stores the access token using the provided TokenStore
+func StoreToken(store TokenStore, token string) error {
+	return store.Set(KeyringService, KeyringTokenKey, token)
+}
+
+// GetToken retrieves the access token using the provided TokenStore
+func GetToken(store TokenStore) (string, error) {
+	return store.Get(KeyringService, KeyringTokenKey)
 }

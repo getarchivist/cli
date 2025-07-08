@@ -39,7 +39,7 @@ var RootCmd = &cobra.Command{
 		session := record.StartSession()
 		markdown := output.ToMarkdown(session)
 
-		token, err := auth.GetToken()
+		token, err := auth.GetToken(auth.RealKeyring{})
 		if err != nil {
 			fmt.Fprintln(os.Stderr, "[ohsh] You must login first: ohsh login")
 			os.Exit(1)

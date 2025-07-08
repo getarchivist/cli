@@ -88,7 +88,7 @@ var runCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		runbookID := args[0]
-		token, err := auth.GetToken()
+		token, err := auth.GetToken(auth.RealKeyring{})
 		if err != nil {
 			fmt.Fprintln(os.Stderr, "[ohsh] You must login first: ohsh login")
 			os.Exit(1)

@@ -60,7 +60,7 @@ var loginCmd = &cobra.Command{
 		if err != nil {
 			return fmt.Errorf("token exchange failed: %w", err)
 		}
-		if err := auth.StoreToken(token.AccessToken); err != nil {
+		if err := auth.StoreToken(auth.RealKeyring{}, token.AccessToken); err != nil {
 			return fmt.Errorf("failed to store token: %w", err)
 		}
 		fmt.Println("Login successful! Token stored securely.")
