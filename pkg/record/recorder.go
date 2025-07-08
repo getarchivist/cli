@@ -14,6 +14,7 @@ import (
 
 	"github.com/creack/pty"
 	"github.com/sirupsen/logrus"
+	"golang.org/x/term"
 )
 
 type Command struct {
@@ -105,6 +106,14 @@ func StartSession() *Session {
 		fmt.Fprintln(os.Stderr, "[archivist] Warning: Running inside a terminal multiplexer (zellij, tmux, or screen). Command tracking may not work correctly.")
 	}
 
+	// Set os.Stdin to raw mode so special keys are passed through
+	oldState, err := term.MakeRaw(int(os.Stdin.Fd()))
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to set terminal to raw mode: %v\n", err)
+		return &Session{}
+	}
+	defer term.Restore(int(os.Stdin.Fd()), oldState)
+
 	logrus.Debugf("Shell command: %s", shell)
 
 	session := &Session{}
@@ -123,8 +132,8 @@ func StartSession() *Session {
 	}()
 
 	logrus.Debugf("Shell PID: %d", cmd.Process.Pid)
-	fmt.Printf("🎥 Recording started: %s\n", shell)
-	fmt.Println("Press Ctrl+D when done to save and exit")
+	fmt.Fprintf(os.Stdout, "🎥 Recording started: %s\n\r", shell)
+	fmt.Fprintf(os.Stdout, "Press Ctrl+D when done to save and exit\n")
 
 	cmdCh := make(chan string, 1)
 	done := make(chan struct{})
@@ -227,7 +236,7 @@ func StartSession() *Session {
 	}
 	lastCmdIdxMu.Unlock()
 
-	fmt.Println("🛑 Recording ended.")
+	fmt.Fprintf(os.Stdout, "🛑 Recording ended.\n\r")
 
 	return session
 }
