@@ -2,6 +2,8 @@
 
 **ohsh** is the official CLI for [Oh Shell!](https://ohsh.dev), your shell, but smarter.
 
+![Demo](demo.gif)
+
 ## Installation
 
 ### Using the install script

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/ohshell/cli/cmd/archivist/commands"
+	"github.com/ohshell/cli/cmd/ohsh/commands"
 )
 
 func main() {
