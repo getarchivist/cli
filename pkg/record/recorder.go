@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/creack/pty"
+	"github.com/creack/termios/raw"
 	"github.com/ohshell/cli/pkg/api"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/term"
@@ -177,12 +178,15 @@ func StartSession(opts ...SessionOption) *Session {
 		fmt.Fprintln(os.Stderr, "[archivist] Warning: Running inside a terminal multiplexer (zellij, tmux, or screen). Command tracking may not work correctly.")
 	}
 
-	oldState, err := term.MakeRaw(int(os.Stdin.Fd()))
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to set terminal to raw mode: %v\n", err)
-		return &Session{}
+	fd := os.Stdin.Fd()
+	if term.IsTerminal(int(fd)) {
+		oldState, err := raw.MakeRaw(os.Stdin.Fd())
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to set terminal to raw mode: %v\n", err)
+			return &Session{}
+		}
+		defer raw.TcSetAttr(fd, oldState)
 	}
-	defer term.Restore(int(os.Stdin.Fd()), oldState)
 
 	logrus.Debugf("Shell command: %s", shell)
 
