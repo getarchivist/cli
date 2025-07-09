@@ -174,6 +174,8 @@ func StartSession(opts ...SessionOption) *Session {
 		shell = "/bin/bash"
 	}
 
+	fmt.Fprintln(os.Stderr, "[ohsh notice] Commands entered using shell history (up arrow, CTRL-R, etc.) may not be captured correctly. Only directly typed commands are reliably recorded.\n\r")
+
 	if os.Getenv("ZELLIJ") != "" || os.Getenv("TMUX") != "" || os.Getenv("STY") != "" {
 		fmt.Fprintln(os.Stderr, "[archivist] Warning: Running inside a terminal multiplexer (zellij, tmux, or screen). Command tracking may not work correctly.")
 	}
