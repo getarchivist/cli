@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/ohshell/cli/build"
 )
@@ -184,4 +185,29 @@ func FetchRunbookMarkdown(id, token string) (string, error) {
 		return "", err
 	}
 	return out.Markdown, nil
+}
+
+// SendSlackAudit sends a command audit log to the backend Slack audit endpoint
+func SendSlackAudit(command, channel, token string) {
+	if token == "" || channel == "" {
+		return
+	}
+	body := map[string]interface{}{
+		"command":        command,
+		"execution_time": time.Now().Format(time.RFC3339),
+		"channel":        channel,
+	}
+	b, _ := json.Marshal(body)
+	url := ResolveAPIURL() + "/api/slack/audit-log"
+	req, err := http.NewRequest("POST", url, bytes.NewReader(b))
+	if err != nil {
+		return
+	}
+	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return
+	}
+	defer resp.Body.Close()
 }
