@@ -28,17 +28,19 @@ type Command struct {
 }
 
 type Session struct {
-	Commands []Command
-	mu       sync.Mutex
+	Commands      []Command
+	mu            sync.Mutex
+	SlackThreadTS string
 }
 
 // SessionOption is a functional option for configuring a session.
 type SessionOption func(*sessionConfig)
 
 type sessionConfig struct {
-	slackAudit   bool
-	slackChannel string
-	token        string
+	slackAudit    bool
+	slackChannel  string
+	token         string
+	slackThreadTS string
 }
 
 // WithSlackAudit enables Slack audit logging for the session.
@@ -47,6 +49,13 @@ func WithSlackAudit(channel, token string) SessionOption {
 		cfg.slackAudit = true
 		cfg.slackChannel = channel
 		cfg.token = token
+		ts, err := api.StartSlackAuditThread(channel, token)
+		if err != nil {
+			logrus.WithError(err).Error("Failed to start Slack audit thread")
+			// decide if we should fail hard or just log
+		} else {
+			cfg.slackThreadTS = ts
+		}
 	}
 }
 
@@ -111,7 +120,7 @@ func (s *StdinInterceptor) Read(p []byte) (int, error) {
 				s.session.mu.Unlock()
 				// Slack audit side effect
 				if s.cfg != nil && s.cfg.slackAudit {
-					go api.SendSlackAudit(trimmed, s.cfg.slackChannel, s.cfg.token)
+					go api.SendSlackAudit(trimmed, s.cfg.slackChannel, s.cfg.token, s.cfg.slackThreadTS)
 				}
 			}
 		}
@@ -133,7 +142,7 @@ func (s *StdinInterceptor) Read(p []byte) (int, error) {
 			s.session.mu.Unlock()
 			// Slack audit side effect
 			if s.cfg != nil && s.cfg.slackAudit {
-				go api.SendSlackAudit(trimmed, s.cfg.slackChannel, s.cfg.token)
+				go api.SendSlackAudit(trimmed, s.cfg.slackChannel, s.cfg.token, s.cfg.slackThreadTS)
 			}
 		}
 		s.lineBuf = nil // clear buffer
@@ -213,13 +222,21 @@ func StartSession(opts ...SessionOption) *Session {
 	cmdCh := make(chan string, 1)
 	done := make(chan struct{})
 
-	// Apply options
+	// Apply options to a config
 	cfg := &sessionConfig{}
 	for _, opt := range opts {
 		opt(cfg)
 	}
+	session.SlackThreadTS = cfg.slackThreadTS
 
-	interceptor := &StdinInterceptor{reader: os.Stdin, session: session, cmdCh: cmdCh, closed: done, cfg: cfg}
+	// Setup stdin interceptor
+	interceptor := &StdinInterceptor{
+		reader:  os.Stdin,
+		session: session,
+		cmdCh:   cmdCh,
+		closed:  done,
+		cfg:     cfg,
+	}
 
 	var wg sync.WaitGroup
 	wg.Add(2)

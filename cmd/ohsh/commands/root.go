@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"bytes"
+	"sync"
 
 	"github.com/manifoldco/promptui"
 	"github.com/ohshell/cli/build"
@@ -63,6 +64,8 @@ var RootCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
+		var wg sync.WaitGroup
+
 		var session *record.Session
 		if slackAuditFlag {
 			fmt.Fprintf(os.Stderr, "[ohsh] 🎉 Slack audit enabled\n\r")
@@ -75,6 +78,14 @@ var RootCmd = &cobra.Command{
 		if noUpload {
 			fmt.Println("[ohsh] --no-upload flag set, skipping upload.")
 			fmt.Printf("[ohsh] Markdown:\n%s\n", markdown)
+			if session.SlackThreadTS != "" {
+				wg.Add(1)
+				go func() {
+					defer wg.Done()
+					api.SendSlackCompletionAudit(slackChannel, token, session.SlackThreadTS, "")
+				}()
+			}
+			wg.Wait()
 			return
 		}
 		fmt.Printf("[ohsh] Markdown: %s\n", markdown)
@@ -131,6 +142,15 @@ var RootCmd = &cobra.Command{
 				os.Exit(1)
 			}
 			fmt.Printf("[ohsh] Doc uploaded to Notion! User: %s, Doc ID: %s\n", resp.UserID, resp.ID)
+			if session.SlackThreadTS != "" {
+				wg.Add(1)
+				docURL := fmt.Sprintf("%s/app/runbooks/%s", api.ResolveAPIURL(), resp.ID)
+				go func() {
+					defer wg.Done()
+					api.SendSlackCompletionAudit(slackChannel, token, session.SlackThreadTS, docURL)
+				}()
+			}
+			wg.Wait()
 			return
 		}
 		resp, err := api.SendMarkdownWithDest(markdown, token, notionFlag, googleFlag)
@@ -140,6 +160,15 @@ var RootCmd = &cobra.Command{
 		}
 
 		fmt.Printf("[ohsh] Doc uploaded! Document URL: %s/app/runbooks/%s\n", api.ResolveAPIURL(), resp.ID)
+		if session.SlackThreadTS != "" {
+			wg.Add(1)
+			docURL := fmt.Sprintf("%s/app/runbooks/%s", api.ResolveAPIURL(), resp.ID)
+			go func() {
+				defer wg.Done()
+				api.SendSlackCompletionAudit(slackChannel, token, session.SlackThreadTS, docURL)
+			}()
+		}
+		wg.Wait()
 	},
 }
 

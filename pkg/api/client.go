@@ -7,11 +7,13 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"time"
 
 	"github.com/ohshell/cli/build"
+	"github.com/sirupsen/logrus"
 )
 
 type GenerateDocResponse struct {
@@ -187,15 +189,85 @@ func FetchRunbookMarkdown(id, token string) (string, error) {
 	return out.Markdown, nil
 }
 
+// StartSlackAuditThread sends a "runbook started" event to the backend to get a thread_ts
+func StartSlackAuditThread(channel, token string) (string, error) {
+	if token == "" || channel == "" {
+		return "", fmt.Errorf("token and channel must be provided")
+	}
+	body := map[string]interface{}{
+		"type":    "start_runbook",
+		"channel": channel,
+	}
+	b, _ := json.Marshal(body)
+	url := ResolveAPIURL() + "/api/slack/audit-log"
+	req, err := http.NewRequest("POST", url, bytes.NewReader(b))
+	if err != nil {
+		return "", err
+	}
+	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return "", fmt.Errorf("backend error on start_runbook: %s", resp.Status)
+	}
+
+	var out struct {
+		TS string `json:"ts"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&out); err != nil {
+		return "", fmt.Errorf("failed to decode ts from response: %w", err)
+	}
+	return out.TS, nil
+}
+
+// SendSlackCompletionAudit sends a "runbook complete" message to Slack.
+func SendSlackCompletionAudit(channel, token, threadTS, docURL string) {
+	if token == "" || channel == "" || threadTS == "" {
+		return
+	}
+	body := map[string]interface{}{
+		"type":      "complete_runbook",
+		"channel":   channel,
+		"thread_ts": threadTS,
+		"doc_url":   docURL, // can be empty
+	}
+	b, _ := json.Marshal(body)
+	url := ResolveAPIURL() + "/api/slack/audit-log"
+	req, err := http.NewRequest("POST", url, bytes.NewReader(b))
+	if err != nil {
+		logrus.WithError(err).Error("failed to create slack completion request")
+		return
+	}
+	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		logrus.WithError(err).Error("failed to send slack completion request")
+		return
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		logrus.Errorf("failed to send slack completion audit, status: %s, body: %s", resp.Status, string(bodyBytes))
+	}
+}
+
 // SendSlackAudit sends a command audit log to the backend Slack audit endpoint
-func SendSlackAudit(command, channel, token string) {
+func SendSlackAudit(command, channel, token, threadTS string) {
 	if token == "" || channel == "" {
 		return
 	}
 	body := map[string]interface{}{
+		"type":           "audit_command",
 		"command":        command,
 		"execution_time": time.Now().Format(time.RFC3339),
 		"channel":        channel,
+		"thread_ts":      threadTS,
 	}
 	b, _ := json.Marshal(body)
 	url := ResolveAPIURL() + "/api/slack/audit-log"
