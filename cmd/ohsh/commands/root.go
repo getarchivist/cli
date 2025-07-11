@@ -73,7 +73,6 @@ var RootCmd = &cobra.Command{
 		} else {
 			session = record.StartSession()
 		}
-		fmt.Printf("[ohsh] Session: %+v\n", session)
 		markdown := output.ToMarkdown(session)
 		if noUpload {
 			fmt.Println("[ohsh] --no-upload flag set, skipping upload.")
