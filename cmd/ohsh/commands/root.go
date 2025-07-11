@@ -39,6 +39,7 @@ var debug bool
 var slackAuditFlag bool
 var slackChannel string
 var noUpload bool
+var jsonFlag bool
 
 var RootCmd = &cobra.Command{
 	Use:   "ohsh",
@@ -73,6 +74,28 @@ var RootCmd = &cobra.Command{
 		} else {
 			session = record.StartSession()
 		}
+
+		// Handle JSON output
+		if jsonFlag {
+			jsonOutput, err := output.ToJSONString(session)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "[ohsh] Failed to generate JSON: %v\n", err)
+				os.Exit(1)
+			}
+			fmt.Println(jsonOutput)
+
+			// If slack audit is enabled, send completion message
+			if session.SlackThreadTS != "" {
+				wg.Add(1)
+				go func() {
+					defer wg.Done()
+					api.SendSlackCompletionAudit(slackChannel, token, session.SlackThreadTS, "")
+				}()
+			}
+			wg.Wait()
+			return
+		}
+
 		markdown := output.ToMarkdown(session)
 		if noUpload {
 			fmt.Println("[ohsh] --no-upload flag set, skipping upload.")
@@ -179,6 +202,7 @@ func init() {
 	RootCmd.PersistentFlags().BoolVar(&slackAuditFlag, "slack-audit", false, "Send each command as an audit log to Slack during the session")
 	RootCmd.PersistentFlags().StringVar(&slackChannel, "slack-channel", "", "Slack channel to send audit logs to (e.g. #incident-audit)")
 	RootCmd.PersistentFlags().BoolVar(&noUpload, "no-upload", false, "Do not upload the generated doc, just print the markdown")
+	RootCmd.PersistentFlags().BoolVar(&jsonFlag, "json", false, "Output the session as JSON instead of uploading")
 }
 
 // Helper for case-insensitive substring search
