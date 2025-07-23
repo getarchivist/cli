@@ -14,6 +14,7 @@ import (
 	"github.com/ohshell/cli/pkg/auth"
 	"github.com/ohshell/cli/pkg/output"
 	"github.com/ohshell/cli/pkg/record"
+	"github.com/ohshell/cli/pkg/spinner"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -110,10 +111,12 @@ var RootCmd = &cobra.Command{
 			wg.Wait()
 			return
 		}
-		fmt.Printf("[ohsh] Markdown: %s\n", markdown)
 
 		if notionFlag {
+			s := spinner.New()
+			s.Start("Fetching Notion pages...")
 			tree, err := api.FetchNotionPageTree(token)
+			s.Stop()
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "[ohsh] Failed to fetch Notion pages: %v\n", err)
 				os.Exit(1)
@@ -158,7 +161,10 @@ var RootCmd = &cobra.Command{
 			parentID := flat[idx].ID
 
 			// Send doc to Notion with parentID
+			uploadSpinner := spinner.New()
+			uploadSpinner.Start("Uploading document to Notion...")
 			resp, err := api.SendMarkdownToNotionWithParent(markdown, token, parentID)
+			uploadSpinner.Stop()
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "[ohsh] Failed to upload doc to Notion: %v\n", err)
 				os.Exit(1)
@@ -175,7 +181,10 @@ var RootCmd = &cobra.Command{
 			wg.Wait()
 			return
 		}
+		docSpinner := spinner.New()
+		docSpinner.Start("Generating and uploading document...")
 		resp, err := api.SendMarkdownWithDest(markdown, token, notionFlag, googleFlag)
+		docSpinner.Stop()
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "[ohsh] Failed to upload doc: %v\n", err)
 			os.Exit(1)
