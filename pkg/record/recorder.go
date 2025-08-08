@@ -111,6 +111,10 @@ func (s *StdinInterceptor) Read(p []byte) (int, error) {
 				case <-s.closed:
 					return n, io.EOF
 				case s.cmdCh <- trimmed:
+					// Channel was successfully sent to
+				default:
+					// Channel is full or closed, skip this command
+					logrus.Debug("cmdCh is full or closed, skipping command")
 				}
 				s.session.mu.Lock()
 				s.session.Commands = append(s.session.Commands, Command{
@@ -133,6 +137,10 @@ func (s *StdinInterceptor) Read(p []byte) (int, error) {
 			case <-s.closed:
 				return n, io.EOF
 			case s.cmdCh <- trimmed:
+				// Channel was successfully sent to
+			default:
+				// Channel is full or closed, skip this command
+				logrus.Debug("cmdCh is full or closed, skipping command")
 			}
 			s.session.mu.Lock()
 			s.session.Commands = append(s.session.Commands, Command{

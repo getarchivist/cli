@@ -8,6 +8,9 @@ import (
 	"bytes"
 	"sync"
 
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
+	"github.com/creack/termios/raw"
 	"github.com/manifoldco/promptui"
 	"github.com/ohshell/cli/build"
 	"github.com/ohshell/cli/pkg/api"
@@ -17,7 +20,79 @@ import (
 	"github.com/ohshell/cli/pkg/spinner"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"golang.org/x/sys/unix"
+	"golang.org/x/term"
 )
+
+// UploadPrompt represents the upload confirmation prompt
+type UploadPrompt struct {
+	choices  []string
+	cursor   int
+	choice   string
+	quitting bool
+}
+
+// NewUploadPrompt creates a new upload prompt
+func NewUploadPrompt() *UploadPrompt {
+	return &UploadPrompt{
+		choices: []string{"Yes, upload to Oh Shell!", "No, exit without uploading"},
+		cursor:  0,
+	}
+}
+
+// Init initializes the prompt
+func (p *UploadPrompt) Init() tea.Cmd {
+	return nil
+}
+
+// Update handles key events
+func (p *UploadPrompt) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "up", "k":
+			if p.cursor > 0 {
+				p.cursor--
+			}
+		case "down", "j":
+			if p.cursor < len(p.choices)-1 {
+				p.cursor++
+			}
+		case "enter":
+			p.choice = p.choices[p.cursor]
+			p.quitting = true
+			return p, tea.Quit
+		case "q", "ctrl+c":
+			p.choice = "no"
+			p.quitting = true
+			return p, tea.Quit
+		}
+	}
+	return p, nil
+}
+
+// View renders the prompt
+func (p *UploadPrompt) View() string {
+	if p.quitting {
+		return ""
+	}
+
+	var s strings.Builder
+	s.WriteString("Upload your session document?\n\n")
+
+	for i, choice := range p.choices {
+		cursor := " "
+		if p.cursor == i {
+			cursor = "▶"
+			choice = lipgloss.NewStyle().Foreground(lipgloss.Color("170")).Render(choice)
+		}
+		s.WriteString(fmt.Sprintf("%s %s\n", cursor, choice))
+	}
+
+	s.WriteString("\n(Use ↑/↓ or k/j to navigate, Enter to select, q to quit)\n")
+
+	return s.String()
+}
 
 // CRLFFormatter wraps a logrus.Formatter and replaces \n with \r\n for terminal compatibility
 type CRLFFormatter struct {
@@ -76,6 +151,10 @@ var RootCmd = &cobra.Command{
 			session = record.StartSession()
 		}
 
+		// Show recording feedback
+		fmt.Fprintf(os.Stderr, "[ohsh] 📝 Recording session... (commands will be captured)\n\r")
+		fmt.Fprintf(os.Stderr, "[ohsh] 💡 Tip: Use Ctrl+C to stop recording and upload your document\n\r")
+
 		// Handle JSON output
 		if jsonFlag {
 			jsonOutput, err := output.ToJSONString(session)
@@ -98,6 +177,55 @@ var RootCmd = &cobra.Command{
 		}
 
 		markdown := output.ToMarkdown(session)
+
+		// Show session summary
+		fmt.Printf("[ohsh] 📊 Session captured %d commands\n", len(session.Commands))
+
+		// Check if session is empty
+		if len(session.Commands) == 0 {
+			fmt.Printf("[ohsh] ⚠️  No commands were captured in this session\n")
+			fmt.Printf("[ohsh] 💡 Try running some commands and then exit with Ctrl+C\n")
+			return
+		}
+
+		fmt.Printf("[ohsh] 🔄 Processing session and preparing document...\n")
+
+		// Restore terminal to cooked mode before running bubbletea
+		if term.IsTerminal(int(os.Stdin.Fd())) {
+			// Get current terminal state and restore to cooked mode
+			oldState, err := raw.TcGetAttr(os.Stdin.Fd())
+			if err == nil {
+				raw.TcSetAttr(os.Stdin.Fd(), oldState)
+			}
+
+			// Additional terminal reset
+			fmt.Print("\033[?25h")   // Show cursor
+			fmt.Print("\033[?2004l") // Disable bracketed paste
+		}
+
+		// Prompt user if they want to upload using bubbletea
+		// Drain any pending input to avoid requiring an extra Enter
+		drainStdin()
+		uploadPrompt := NewUploadPrompt()
+		var program *tea.Program
+		if tty, err := os.Open("/dev/tty"); err == nil {
+			defer tty.Close()
+			program = tea.NewProgram(uploadPrompt, tea.WithInput(tty))
+		} else {
+			program = tea.NewProgram(uploadPrompt)
+		}
+		result, err := program.Run()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "[ohsh] Prompt error: %v\n", err)
+			os.Exit(1)
+		}
+
+		uploadResult := result.(*UploadPrompt)
+		if uploadResult.cursor == 1 {
+			fmt.Printf("[ohsh] 👋 Exiting without uploading. Your session was recorded but not saved.\n")
+			return
+		}
+
 		if noUpload {
 			fmt.Println("[ohsh] --no-upload flag set, skipping upload.")
 			fmt.Printf("[ohsh] Markdown:\n%s\n", markdown)
@@ -162,14 +290,15 @@ var RootCmd = &cobra.Command{
 
 			// Send doc to Notion with parentID
 			uploadSpinner := spinner.New()
-			uploadSpinner.Start("Uploading document to Notion...")
+			uploadSpinner.Start("Processing session and uploading to Notion...")
 			resp, err := api.SendMarkdownToNotionWithParent(markdown, token, parentID)
 			uploadSpinner.Stop()
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "[ohsh] Failed to upload doc to Notion: %v\n", err)
 				os.Exit(1)
 			}
-			fmt.Printf("[ohsh] Doc uploaded to Notion! User: %s, Doc ID: %s\n", resp.UserID, resp.ID)
+			fmt.Printf("[ohsh] ✅ Document uploaded to Notion successfully!\n")
+			fmt.Printf("[ohsh] 📄 Document ID: %s\n", resp.ID)
 			if session.SlackThreadTS != "" {
 				wg.Add(1)
 				docURL := fmt.Sprintf("%s/app/runbooks/%s", api.ResolveAPIURL(), resp.ID)
@@ -182,7 +311,7 @@ var RootCmd = &cobra.Command{
 			return
 		}
 		docSpinner := spinner.New()
-		docSpinner.Start("Generating and uploading document...")
+		docSpinner.Start("Processing session and generating document...")
 		resp, err := api.SendMarkdownWithDest(markdown, token, notionFlag, googleFlag)
 		docSpinner.Stop()
 		if err != nil {
@@ -190,7 +319,8 @@ var RootCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		fmt.Printf("[ohsh] Doc uploaded! Document URL: %s/app/runbooks/%s\n", api.ResolveAPIURL(), resp.ID)
+		fmt.Printf("[ohsh] ✅ Document uploaded successfully!\n")
+		fmt.Printf("[ohsh] 📄 Document URL: %s/app/runbooks/%s\n", api.ResolveAPIURL(), resp.ID)
 		if session.SlackThreadTS != "" {
 			wg.Add(1)
 			docURL := fmt.Sprintf("%s/app/runbooks/%s", api.ResolveAPIURL(), resp.ID)
@@ -218,4 +348,18 @@ func init() {
 func containsIgnoreCase(s, substr string) bool {
 	s, substr = strings.ToLower(s), strings.ToLower(substr)
 	return strings.Contains(s, substr)
+}
+
+// drainStdin clears any pending bytes in stdin (non-blocking) to prevent
+// stray newlines from being consumed by the next interactive prompt.
+func drainStdin() {
+	fd := int(os.Stdin.Fd())
+	for {
+		n, err := unix.IoctlGetInt(fd, unix.TIOCINQ)
+		if err != nil || n <= 0 {
+			break
+		}
+		buf := make([]byte, n)
+		_, _ = os.Stdin.Read(buf)
+	}
 }
